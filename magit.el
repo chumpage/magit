@@ -368,6 +368,9 @@ There are three possible settings:
                  (const :tag "All" all))
   :set 'magit-set-variable-and-refresh)
 
+(defvar magit-key-mode-setup-window-function nil
+  "Function to setup the key window for magit's key-mode")
+
 (defvar magit-current-indentation nil
   "Indentation highlight used in the current buffer.
 This is calculated from `magit-highlight-indentation'.")
