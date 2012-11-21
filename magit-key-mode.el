@@ -359,13 +359,14 @@ command that's eventually invoked.")
 (defvar magit-log-mode-window-conf nil
   "Pre-popup window configuration.")
 
-(defun magit-key-mode (for-group &optional original-opts)
+(defun magit-key-mode (for-group &optional original-opts original-args)
   "Mode for magit key selection. All commands, switches and
 options can be toggled/actioned with the key combination
 highlighted before the description."
   (interactive)
   ;; save the window config to restore it as was (no need to make this
   ;; buffer local)
+  (when (null original-args) (setq original-args (make-hash-table)))
   (setq magit-log-mode-window-conf
         (current-window-configuration))
   ;; setup the mode, draw the buffer
@@ -382,7 +383,7 @@ highlighted before the description."
          original-opts)
     (set (make-local-variable
           'magit-key-mode-current-args)
-         (make-hash-table))
+         original-args)
     (set (make-local-variable 'magit-key-mode-prefix) current-prefix-arg)
     (magit-key-mode-redraw for-group))
   (message
