@@ -338,7 +338,9 @@ command that's eventually invoked.")
 
 (defun magit-key-mode-add-argument (for-group arg-name input-func)
   (let ((input (funcall input-func (concat arg-name ": "))))
-    (puthash arg-name input magit-key-mode-current-args)
+    (if (= (length input) 0)
+        (remhash arg-name magit-key-mode-current-args)
+        (puthash arg-name input magit-key-mode-current-args))
    (magit-key-mode-redraw for-group)))
 
 (defvar magit-key-mode-current-options '()
