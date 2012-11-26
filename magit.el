@@ -524,6 +524,8 @@ Many Magit faces inherit from this one by default."
   "List of custom options to pass to Git.
 Do not customize this (used in the `magit-key-mode' implementation).")
 
+(defvar magit-custom-options-alist '())
+
 (defvar magit-read-rev-history nil
   "The history of inputs to `magit-read-rev'.")
 

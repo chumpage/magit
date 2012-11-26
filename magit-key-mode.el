@@ -324,6 +324,8 @@ command that's eventually invoked.")
                (push (concat k (shell-quote-argument v)) args))
              magit-key-mode-current-args)
     (let ((magit-custom-options (append args magit-key-mode-current-options))
+          (magit-custom-options-alist (magit-form-options-alist magit-key-mode-current-options
+                                                                magit-key-mode-current-args))
           (current-prefix-arg (or current-prefix-arg magit-key-mode-prefix)))
       (set-window-configuration magit-log-mode-window-conf)
       (when func
@@ -359,14 +361,34 @@ command that's eventually invoked.")
 (defvar magit-log-mode-window-conf nil
   "Pre-popup window configuration.")
 
-(defun magit-key-mode (for-group &optional original-opts original-args)
+(defun magit-extract-switches-and-args (options-alist)
+  (let ((switches)
+        (args (make-hash-table :test 'equal)))
+    (mapcar (lambda (option)
+              (if (null (cdr option))
+                  (push (car option) switches)
+                  (puthash (concat (car option) "=") (cdr option) args)))
+            options-alist)
+    (list (nreverse switches) args)))
+
+(defun magit-form-options-alist (switches args)
+  (let ((alist nil))
+    (mapcar (lambda (switch) (push (cons switch nil) alist))
+            switches)
+    (maphash (lambda (name val) (push (cons (if (char-equal (aref name (- (length name) 1)) ?=)
+                                                (substring name 0 (- (length name) 1)))
+                                            val)
+                                      alist))
+             args)
+    (nreverse alist)))
+
+(defun magit-key-mode (for-group &optional options-alist)
   "Mode for magit key selection. All commands, switches and
 options can be toggled/actioned with the key combination
 highlighted before the description."
   (interactive)
   ;; save the window config to restore it as was (no need to make this
   ;; buffer local)
-  (when (null original-args) (setq original-args (make-hash-table)))
   (setq magit-log-mode-window-conf
         (current-window-configuration))
   ;; setup the mode, draw the buffer
@@ -378,12 +400,13 @@ highlighted before the description."
                (other-window 1)))
     (switch-to-buffer buf)
     (kill-all-local-variables)
-    (set (make-local-variable
-          'magit-key-mode-current-options)
-         original-opts)
-    (set (make-local-variable
-          'magit-key-mode-current-args)
-         original-args)
+    (destructuring-bind (switches args) (magit-extract-switches-and-args options-alist)
+      (set (make-local-variable
+            'magit-key-mode-current-options)
+           switches)
+      (set (make-local-variable
+            'magit-key-mode-current-args)
+           args))
     (set (make-local-variable 'magit-key-mode-prefix) current-prefix-arg)
     (magit-key-mode-redraw for-group))
   (message
