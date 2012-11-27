@@ -263,6 +263,17 @@ FOR-GROUP."
     (goto-char p)
     (skip-chars-forward " ")))
 
+(defun magit-key-mode-build-exec-point-alist ()
+  (save-excursion
+    (goto-char (point-min))
+    (let* ((exec (get-text-property (point) 'key-group-executor))
+           (exec-alist (if exec `((,exec . ,(point))) nil)))
+      (do nil ((eobp) (nreverse exec-alist))
+        (when (not (eq exec (get-text-property (point) 'key-group-executor)))
+          (setq exec (get-text-property (point) 'key-group-executor))
+          (when exec (push (cons exec (point)) exec-alist)))
+        (forward-char)))))
+
 (defun magit-key-mode-build-keymap (for-group)
   "Construct a normal looking keymap for the key mode to use and
 put it in magit-key-mode-key-maps for fast lookup."
@@ -424,6 +435,8 @@ highlighted before the description."
 (defun magit-key-mode-redraw (for-group)
   "(re)draw the magit key buffer."
   (let ((buffer-read-only nil)
+        (current-exec (get-text-property (point) 'key-group-executor))
+        (new-exec-pos)
         (old-point (point))
         (is-first (zerop (buffer-size)))
         (actions-p nil))
@@ -433,10 +446,15 @@ highlighted before the description."
     (setq actions-p (magit-key-mode-draw for-group))
     (delete-trailing-whitespace)
     (setq mode-name "magit-key-mode" major-mode 'magit-key-mode)
+    (when current-exec
+      (setq new-exec-pos (cdr (assoc current-exec (magit-key-mode-build-exec-point-alist)))))
     (if (and is-first actions-p)
       (progn (goto-char actions-p)
              (magit-key-mode-jump-to-next-exec))
-      (goto-char old-point)))
+      (if new-exec-pos
+          (progn (goto-char new-exec-pos)
+                 (skip-chars-forward " "))
+          (goto-char old-point))))
   (setq buffer-read-only t)
   (fit-window-to-buffer))
 
