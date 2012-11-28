@@ -251,17 +251,6 @@ FOR-GROUP."
                   (error "Nothing at point to do.")))
          (def (lookup-key (current-local-map) key)))
     (call-interactively def)))
-(defun magit-key-mode-jump-to-next-exec ()
-  "Jump to the next action/args/option point."
-  (interactive)
-  (let* ((oldp (point))
-         (old  (get-text-property oldp 'key-group-executor))
-         (p    (if (= oldp (point-max)) (point-min) (1+ oldp))))
-    (while (let ((new (get-text-property p 'key-group-executor)))
-             (and (not (= p oldp)) (or (not new) (eq new old))))
-      (setq p (if (= p (point-max)) (point-min) (1+ p))))
-    (goto-char p)
-    (skip-chars-forward " ")))
 
 (defun magit-key-mode-build-exec-point-alist ()
   (save-excursion
@@ -273,6 +262,15 @@ FOR-GROUP."
           (setq exec (get-text-property (point) 'key-group-executor))
           (when exec (push (cons exec (point)) exec-alist)))
         (forward-char)))))
+
+(defun magit-key-mode-jump-to-next-exec ()
+  "Jump to the next action/args/option point."
+  (interactive)
+  (let* ((exec-alist (magit-key-mode-build-exec-point-alist))
+         (next-exec-pos (find-if (lambda (pos) (> pos (point))) exec-alist :key 'cdr)))
+    (when (or next-exec-pos exec-alist)
+      (goto-char (or (cdr next-exec-pos) (cdar exec-alist)))
+      (skip-chars-forward " "))))
 
 (defun magit-key-mode-build-keymap (for-group)
   "Construct a normal looking keymap for the key mode to use and
